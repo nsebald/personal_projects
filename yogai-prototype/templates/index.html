@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yoga for Injuries</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <style>
+        body {
+            padding-top: 20px;
+            background: #f8f9fa; /* light gray background */
+        }
+        .container {
+            max-width: 600px;
+        }
+        .img-responsive {
+            width: 100%;
+            height: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4 text-center">Yoga for Injuries</h1>
+        <form id="injury-form" class="mb-3">
+            <input type="text" name="injury" placeholder="Describe your injury" required class="form-control mb-2">
+            <button type="submit" class="btn btn-primary btn-block">Submit</button>
+        </form>
+
+        <!-- Display the diagnosis result -->
+        <div id="diagnosis-result" class="alert alert-info" style="display:none;">
+            <h4>Diagnosis:</h4>
+            <p></p>
+        </div>
+
+        <!-- Display images for each pose -->
+        <div id="pose-images" style="display:none;">
+            <h2>Recommended Poses:</h2>
+        </div>
+
+        <!-- Audio guide download section -->
+        <div id="audio-guide" style="display:none;">
+            <h2>Download your Yoga Class Audio Guide</h2>
+            <a id="download-audio" href="#" download class="btn btn-success">Download Audio</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('injury-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            fetch('/get_poses', {
+                method: 'POST',
+                body: new FormData(this)
+            }).then(response => response.json())
+            .then(data => {
+                if (data.diagnosis) {
+                    const diagnosisDiv = document.getElementById('diagnosis-result');
+                    diagnosisDiv.querySelector('p').textContent = data.diagnosis;
+                    diagnosisDiv.style.display = 'block';
+                }
+                if (data.photos_dict) {
+                    const posesDiv = document.getElementById('pose-images');
+                    posesDiv.innerHTML = '<h2>These are the poses you will be doing in class:</h2>';
+                    Object.keys(data.photos_dict).forEach(pose => {
+                        const section = document.createElement('section');
+                        const header = document.createElement('h3');
+                        header.textContent = pose;
+                        section.appendChild(header);
+                        data.photos_dict[pose].forEach(url => {
+                            const img = document.createElement('img');
+                            img.src = url;
+                            img.alt = `Yoga pose for ${pose}`;
+                            img.classList.add('img-responsive');
+                            section.appendChild(img);
+                        });
+                        posesDiv.appendChild(section);
+                    });
+                    posesDiv.style.display = 'block';
+                }
+                if (data.audio_file_path) {
+                    const audioDiv = document.getElementById('audio-guide');
+                    const downloadLink = document.getElementById('download-audio');
+                    downloadLink.href = data.audio_file_path;
+                    audioDiv.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
+</body>
+</html>
